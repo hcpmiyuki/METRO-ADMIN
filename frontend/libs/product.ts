@@ -12,10 +12,15 @@ export async function getProducts(): Promise<Product[]> {
 				tag_name
 			)
 		`)
-    .limit(10)
+		.limit(40)
 	
 	if (error && status !== 406) {
 		throw error
 	}
+
+  if (data === null) {
+    return []
+  }
+  
   return data;
 }

@@ -5,6 +5,10 @@ type Product = {
   image_url: string;
   hp_url: string;
   average_price: number;
-  tags: Tag[];
+  tags?: Tag[];
   updated_at: string;
+}
+
+type ProductWithCheck = Product & {
+  isChecked?: boolean;
 }

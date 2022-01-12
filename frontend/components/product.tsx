@@ -1,25 +1,25 @@
 import { FC } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import TagItem from './tag'
 
 type Props = {
-  product: Product;
+  product: ProductWithCheck;
+	hadleCheckboxChange: (event: any) => void;
 };
 
-const ProductItem: FC<Props> = ({ product }) => {
+const ProductItem: FC<Props> = ({ product, hadleCheckboxChange }) => {
 	return (
 		<div>
 			<Image src={product.image_url} width={64} height={64} alt={product.product_name} />
-			<a href={product.hp_url}>{product.product_name}</a>
-			<a>{product.released_at}</a>
-			<a>平均金額:{product.average_price}円</a>
-			{product.tags.map((tag) => {
-				return (
-					<Link href={`/tags/${tag.id}`} key={tag.id}>
-						<a>{tag.tag_name}</a>
-					</Link>
-				)
-			})}
+			<div className='block'>
+				<input type="checkbox" value={product.id} checked={product.isChecked} className="rounded" onChange={hadleCheckboxChange}/>
+				<a>{product.product_name}</a>
+			</div>
+			<div className='space-x-1'>
+				{product.tags.map((tag) => {
+					return <TagItem key={tag.id} tagName={tag.tag_name}/>
+				})}
+			</div>
 		</div>
 	)
 }
