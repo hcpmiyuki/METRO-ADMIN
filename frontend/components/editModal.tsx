@@ -2,7 +2,7 @@ import { FC } from 'react'
 import SliderItem from './slider'
 import CreatableSelect from 'react-select/creatable';
 import Button from './button'
-import TagWithDelete from './tagDelete'
+import Tag from './tag'
 
 type Props = {
   closeModal: () => void;
@@ -18,7 +18,7 @@ type Props = {
 
 const EditModal: FC<Props> = ({closeModal, products, tagOptions, tagOptionsSelected, tagsAnnotatedCommon, handleAnnotate, handleTagSelectChange, handleTagCreate, handleDeleteProductTagRelation }) => {
   return (
-    <div className="w-5/6 bg-lime-300 fixed top-20 mx-auto z-10">
+    <div className="w-5/6 bg-white fixed top-20 mx-auto p-5 border border-gray-600 border-solid rounded-lg z-10">
       <SliderItem products={products}/>
       <div>
         <p>共通のタグ</p>
@@ -31,29 +31,29 @@ const EditModal: FC<Props> = ({closeModal, products, tagOptions, tagOptionsSelec
                 tag_name: tagOption.label
               }
               return (
-                <TagWithDelete
-                  key={tag.id}
-                  tag={tag}
-                  handleClick={handleDeleteProductTagRelation}
-                />
+                <Tag key={tag.id} tagName={tag.tag_name}>
+                  <span className='px-1.5' onClick={() => handleDeleteProductTagRelation(tag.id)}>×</span>
+                </Tag>
               )
             })
           }
         </div>
       </div>
-      <CreatableSelect
-        isClearable
-        isMulti
-        onChange={(e) => handleTagSelectChange(e)}
-        onCreateOption={handleTagCreate}
-        options={tagOptions}
-        value={tagOptionsSelected}
-      />
-      <Button
-        handleSubmit={handleAnnotate}
-        styles="bg-slate-500 rounded-md w-1/6"
-        label="タグ付け"
-      />
+        <CreatableSelect
+          isClearable
+          isMulti
+          onChange={(e) => handleTagSelectChange(e)}
+          onCreateOption={handleTagCreate}
+          options={tagOptions}
+          value={tagOptionsSelected}
+        />
+      <div className='flex justify-center'>
+        <Button
+          handleSubmit={handleAnnotate}
+          styles="bg-slate-500 rounded-md w-1/4 text-sm p-2"
+          label="タグ付け"
+        />
+      </div>
       <p className="w-8 h-8 text-center text-2xl absolute top-0.5 right-0.5" onClick={closeModal}>×</p>
     </div>
   )

@@ -2,14 +2,15 @@ import { FC } from 'react'
 
 type Props = {
   handleSubmit: (event: any) => void;
-  styles?: string;
   label: string;
+  styles?: string;
 };
 
-const Button: FC<Props> = ({ handleSubmit, styles, label }) => {
+const Button: FC<Props> = ({ handleSubmit, styles, children, label }) => {
 	return (
-		<p className={styles && "text-center pt-2 border-solid text-base" + " " + styles} onClick={handleSubmit}>
+		<p className={styles && "text-center border-solid text-base" + " " + styles} onClick={handleSubmit}>
       {label}
+      {children}
     </p>
 	)
 }

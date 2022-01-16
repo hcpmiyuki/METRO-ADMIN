@@ -9,7 +9,7 @@ const SearchButton: FC<Props> = ({ handleSubmit }) => {
 	return (
     <Button
       handleSubmit={handleSubmit}
-      styles="bg-slate-500 rounded-md w-1/6"
+      styles="bg-slate-500 rounded-md w-1/6 pt-2"
       label="🔎"
     />
 	)

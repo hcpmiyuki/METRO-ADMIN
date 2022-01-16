@@ -13,7 +13,7 @@ const SliderItem: FC<Props> = ({ products }) => {
 
   return (
     <div className="flex justify-center">
-      <div className='w-4/5 text-gray-500'>
+      <div className='w-4/5'>
         <Slider {...settings}>
           {products.map((product)=>
             <div key={product.id}>

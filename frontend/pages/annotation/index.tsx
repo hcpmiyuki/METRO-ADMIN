@@ -64,7 +64,7 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
   const [tagsAnnotatedCommon, setTagsAnnotatedCommon] = useState<TagOption[]>([]);
   const [tagOptionsSelected, setTagOptionsSelected] = useState<readonly TagOption[]>([]);
   const [productsSearched, setProductsSearched] = useState<ProductWithCheck[]>(products);
-  const [productsSearchedShow, setProductsSearchedShow] = useState<ProductWithCheck[]>(products);
+  const [productsSearchedSelected, setproductsSearchedSelected] = useState<ProductWithCheck[]>(products);
   const [searchWord, setSearchWord] = useState<string>('');
   const [tagStatus, setTagStatus] = useState<TagStatus>('all');
   const [pageNum, setPageNum] = useState<number>(1);
@@ -91,7 +91,7 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
     });
     setSearchWord('');
     setProductsSearched(productsSearchedTemp);
-    setProductsSearchedShow(productsSearchedTemp);
+    setproductsSearchedSelected(productsSearchedTemp);
   }, [tagStatus])
 
     //項目を読み込むときのコールバック
@@ -105,19 +105,19 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
 
   const handleSearchWordSubmit = (event: any) => {
     const productsSearchedTemp = productsSearched.filter(product => product.product_name.includes(searchWord));
-    setProductsSearchedShow(productsSearchedTemp);
+    setproductsSearchedSelected(productsSearchedTemp);
   }
 
   const hadleCheckboxChange = (event: any) => {
     const id:number = event.target.value;
     const isChecked:boolean = event.target.checked;
-    const productsSearchedShowTemp = productsSearchedShow.map((product) => {
+    const productsSearchedSelectedTemp = productsSearchedSelected.map((product) => {
       if (product.id == id) {
         product.isChecked = isChecked
       }
       return product
     });
-    setProductsSearchedShow(productsSearchedShowTemp);
+    setproductsSearchedSelected(productsSearchedSelectedTemp);
   }
 
   const handleTagAnnotate = async () => {
@@ -151,14 +151,14 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
   }
 
   const showModal = () => {
-    const productsSearchedShowTemp = productsSearchedShow.filter(product => product.isChecked);
-    if (productsSearchedShowTemp.length === 0) {
+    const productsSearchedSelectedTemp = productsSearchedSelected.filter(product => product.isChecked);
+    if (productsSearchedSelectedTemp.length === 0) {
       alert('チェックされた商品がありません');
       return;
     }
-    setProductsChecked(productsSearchedShowTemp);
+    setProductsChecked(productsSearchedSelectedTemp);
 
-    const commonTags = filterCommonTags(productsSearchedShowTemp);
+    const commonTags = filterCommonTags(productsSearchedSelectedTemp);
     setTagsAnnotatedCommon(commonTags);
     setShowModalFlag(true);
   }
@@ -169,7 +169,7 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
   }
 
   const productsLoaded = (
-    <ProductList products={productsSearchedShow.slice(0, PAGE_PRODUCT_COUNT*pageNum)} hadleCheckboxChange={hadleCheckboxChange} />
+    <ProductList products={productsSearchedSelected.slice(0, PAGE_PRODUCT_COUNT*pageNum)} hadleCheckboxChange={hadleCheckboxChange} />
   );
 
   const loader =<div className="loader" key={0}>Loading ...</div>;
@@ -191,7 +191,7 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
           handleDeleteProductTagRelation={handleDeleteProductTagRelation}
         />
       }
-      <div>
+      <div className="fixed z-20 w-5/6">
         <select value={tagStatus} className="rounded w-full" onChange={(event) => setTagStatus(event.target.value as TagStatus)}>
           {options.map((option, i) => {
             return <option value={option.value} key={i}>{option.text}</option>
@@ -206,7 +206,9 @@ const ProductPage: FC<Props> = ({ products, tagOptions }) => {
       <InfiniteScroll
         loadMore={loadMore}
         hasMore={hasMore}
-        loader={loader}>
+        loader={loader}
+        className="relative	top-600"
+      >
         {productsLoaded}
       </InfiniteScroll>
     </div>

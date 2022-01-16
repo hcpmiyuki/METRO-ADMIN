@@ -4,7 +4,7 @@ export async function insertProductTags(products:Product[], tagOptions:readonly 
   const relations = createProductTagRelationsArray(products, tagOptions);
   const { data, error, status } = await supabase
   .from<ProductTag>('product_tags')
-  .insert(relations);
+  .upsert(relations);
 
   if (error && status !== 406) {
 		throw error

@@ -11,8 +11,7 @@ export async function getProducts(): Promise<Product[]> {
 				id,
 				tag_name
 			)
-		`)
-		.limit(40)
+		`);
 	
 	if (error && status !== 406) {
 		throw error
