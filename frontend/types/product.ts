@@ -10,5 +10,5 @@ type Product = {
 }
 
 type ProductWithCheck = Product & {
-  isChecked?: boolean;
+  checked?: boolean;
 }
