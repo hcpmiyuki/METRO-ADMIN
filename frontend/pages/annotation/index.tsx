@@ -1,32 +1,20 @@
 import { FC, useEffect, useState } from "react"
 import { getProducts } from '../../libs/product'
-import { getTags, createTag } from '../../libs/tags'
+import { getTags, createTag, convertTagToOption } from '../../libs/tags'
 import { insertProductTags, deleteProductTags } from '../../libs/productTags'
-import ProductList from '../../components/productList'
-import KeywordSearch from "../../components/keywordSearch"
-import EditButton from "../../components/editButton"
-import EditModal from "../../components/editModal"
+import ProductList from '../../components/model/product/productList'
+import ProductSearchHeader from "../../components/model/product/ProductSearchHeader"
+import TagAnnotationModal from "../../components/model/productTag/TagAnnotationModal"
+import ModaShowButton from "../../components/model/productTag/TagAnnotationModalShowButton"
 import InfiniteScroll  from "react-infinite-scroller"
 import Router from 'next/router'
 
 type TagStatus = 'all' | 'notTagged' | 'tagged';
 
-type Option = {
-  value: TagStatus;
-  text: string;
-}
-
 type Props = {
   productsWithCheck: ProductWithCheck[];
   tagOptions: TagOption[];
 };
-
-const convertTagToOption = (tag:Tag): TagOption => {
-  return {
-    value: tag.id,
-    label: tag.tag_name
-  }
-}
 
 const extractTagsCommonToProducts = (products:Product[]): TagOption[] => {
   if (!products[0].tags) return [];
@@ -74,11 +62,6 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
   const [modalShowed, setModalShowed] = useState<boolean>(false);
   const [productsChecked, setProductsChecked] = useState<ProductWithCheck[]>([]);
   const PAGE_PRODUCT_COUNT: number = 20;
-  const options: Option[] = [
-    {value: 'all', text: '全て'},
-    {value: 'notTagged', text: 'タグ無し'},
-    {value: 'tagged', text: 'タグ付き'}
-  ];
 
   useEffect( () => {
     const productsSearchedTemp = productsWithCheck.filter((product) => {
@@ -176,31 +159,28 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
 
   return (
     <div>
-      <EditButton showModal={showModal}/>
+      <ModaShowButton showModal={showModal}/>
       {
         modalShowed &&
-        <EditModal
+        <TagAnnotationModal
           closeModal={closeModal}
-          products={productsChecked}
+          productsChecked={productsChecked}
           tagOptions={tagOptionList}
-          tagsAnnotatedCommon={tagOptionsCommon}
+          tagOptionsSelected={tagOptionsSelected}
+          tagOptionsCommon={tagOptionsCommon}
           handleAnnotate={handleProductTagRelationCreate}
           handleTagSelectChange={setTagOptionsSelected}
-          tagOptionsSelected={tagOptionsSelected}
           handleTagCreate={handleTagCreate}
-          handleDeleteProductTagRelation={handleProductTagRelationDelete}
+          handleProductTagRelationDelete={handleProductTagRelationDelete}
         />
       }
       <div className="fixed z-20 w-5/6">
-        <select value={tagStatus} className="rounded w-full" onChange={(event) => setTagStatus(event.target.value as TagStatus)}>
-          {options.map((option, i) => {
-            return <option value={option.value} key={i}>{option.text}</option>
-          })}
-        </select>
-        <KeywordSearch
-          handleChange={setSearchWord}
-          handleSubmit={handleSearchWordSubmit}
+        <ProductSearchHeader
+          tagStatus={tagStatus}
           searchWord={searchWord}
+          handleTagStatusChange={(event) => setTagStatus(event.target.value as TagStatus)}
+          handleSearchWordChange={(event) => setSearchWord(event.target.value)}
+          handleSubmit={handleSearchWordSubmit}
         />
       </div>
       <InfiniteScroll

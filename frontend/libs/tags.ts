@@ -30,3 +30,17 @@ export async function createTag(tagName: string): Promise<Tag> {
 
   return data[0];
 }
+
+export function convertTagToOption(tag:Tag): TagOption {
+  return {
+    value: tag.id,
+    label: tag.tag_name
+  }
+}
+
+export function convertTagOptionToTag(tag:TagOption): Tag {
+  return {
+    id: tag.value,
+    tag_name: tag.label
+  }
+}
