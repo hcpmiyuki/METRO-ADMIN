@@ -172,6 +172,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
           handleTagSelectChange={setTagOptionsSelected}
           handleTagCreate={handleTagCreate}
           handleProductTagRelationDelete={handleProductTagRelationDelete}
+          customStyles='fixed top-28 mx-auto z-20'
         />
       }
       <ProductSearchHeader

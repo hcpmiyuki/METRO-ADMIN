@@ -15,7 +15,10 @@ type Props = {
   handleTagSelectChange: (inputValue: readonly TagOption[]) => void;
   handleTagCreate: (inputValue: string) => void;
   handleProductTagRelationDelete: (value: number) => void;
+  customStyles?: string;
 };
+
+const defaultStyle = 'w-5/6 bg-white p-5 border border-gray-600 border-solid rounded-lg';
 
 const TagAnnotationModal: FC<Props> = ({
     closeModal,
@@ -26,10 +29,12 @@ const TagAnnotationModal: FC<Props> = ({
     handleAnnotate,
     handleTagSelectChange,
     handleTagCreate,
-    handleProductTagRelationDelete
+    handleProductTagRelationDelete,
+    customStyles
   }) => {
+  const styles = customStyles ? `${defaultStyle} ${customStyles}` : defaultStyle;
   return (
-    <div className="w-5/6 bg-white fixed top-20 mx-auto p-5 border border-gray-600 border-solid rounded-lg z-10">
+    <div className={styles}>
       <SliderItem products={productsChecked}/>
       <div>
         <p>共通のタグ</p>
