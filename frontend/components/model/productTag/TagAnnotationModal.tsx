@@ -59,13 +59,11 @@ const TagAnnotationModal: FC<Props> = ({
         options={tagOptions}
         value={tagOptionsSelected}
       />
-      <div className='flex justify-center'>
-        <Button
-          handleSubmit={handleAnnotate}
-          text="タグ付け"
-          customStyles="bg-slate-500 rounded-md w-1/4 text-sm p-2"
-        />
-      </div>
+      <Button
+        handleSubmit={handleAnnotate}
+        text="タグ付け"
+        customStyles="bg-slate-500 rounded-md w-1/4 text-sm p-2 mx-auto"
+      />
       <p className="w-8 h-8 text-center text-2xl absolute top-0.5 right-0.5" onClick={closeModal}>×</p>
     </div>
   )
