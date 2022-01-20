@@ -43,7 +43,7 @@ const TagAnnotationModal: FC<Props> = ({
             tagOptionsCommon.map((tagOption) => {
               const tag = convertTagOptionToTag(tagOption);
               return (
-                <Tag key={tag.id} tagName={tag.tag_name}>
+                <Tag key={tag.id} tagName={tag.tag_name} customStyles='text-lg'>
                   <span className='px-1.5' onClick={() => handleProductTagRelationDelete(tag.id)}>×</span>
                 </Tag>
               )

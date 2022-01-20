@@ -2,11 +2,15 @@ import { FC } from 'react'
 
 type Props = {
   tagName: string;
+  customStyles?: string;
 };
 
-const TagItem: FC<Props> = ({ tagName, children }) => {
+const defaultStyle = 'bg-slate-500 rounded-md text-sm';
+
+const TagItem: FC<Props> = ({ children, tagName, customStyles }) => {
+  const styles = customStyles ? `${defaultStyle} ${customStyles}` : defaultStyle;
 	return (
-    <a className='bg-slate-500 rounded-md text-sm'>
+    <a className={styles}>
       {tagName}
       {children}
     </a>
