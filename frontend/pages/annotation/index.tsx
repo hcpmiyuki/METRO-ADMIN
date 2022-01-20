@@ -126,10 +126,10 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     setTagOptionList([...tagOptionList, tagOption]);
   }
 
-  const handleProductTagRelationDelete = async (value: any) => {
-    await deleteProductTags(productsChecked, value)
+  const handleProductTagRelationDelete = async (tagId: number) => {
+    await deleteProductTags(productsChecked, tagId)
     .then(() => {
-      const tagOptionsCommonTemp = tagOptionsCommon.filter(tag => !(tag.value === value));
+      const tagOptionsCommonTemp = tagOptionsCommon.filter(tag => !(tag.value === tagId));
       setTagOptionsCommon(tagOptionsCommonTemp);
     })
     .catch((e) => {

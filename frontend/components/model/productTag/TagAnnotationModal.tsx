@@ -14,7 +14,7 @@ type Props = {
   handleAnnotate: () => void;
   handleTagSelectChange: (inputValue: readonly TagOption[]) => void;
   handleTagCreate: (inputValue: string) => void;
-  handleProductTagRelationDelete: (value: any) => void;
+  handleProductTagRelationDelete: (value: number) => void;
 };
 
 const TagAnnotationModal: FC<Props> = ({
