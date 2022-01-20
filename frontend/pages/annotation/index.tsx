@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react"
-import { getProducts } from '../../libs/product'
+import { getAllProducts } from '../../libs/product'
 import { getTags, createTag, convertTagToOption } from '../../libs/tags'
 import { insertProductTags, deleteProductTags } from '../../libs/productTags'
 import ProductList from '../../components/model/product/productList'
@@ -199,7 +199,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
 };
 
 export async function getStaticProps() {
-  let productsWithCheck: ProductWithCheck[] = await getProducts();
+  let productsWithCheck: ProductWithCheck[] = await getAllProducts();
   productsWithCheck = productsWithCheck.map((product) => {
     product['checked'] = false
     return product;

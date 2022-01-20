@@ -2,7 +2,7 @@ import { supabase } from '../utils/supabaseClient'
 
 type Key = "updated_at" | "product_name";
 
-export async function getProducts(): Promise<Product[]> {
+export async function getAllProducts(): Promise<Product[]> {
 	const { data, error, status } = await supabase
 		.from<Product>('products')
 		.select(`
