@@ -22,17 +22,21 @@ type Props = {
   handleTagStatusChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   handleSearchWordChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: () => void;
+  customStyles?: string;
 }
+const defaultStyle = '';
 
 const ProductSearchHeader: FC<Props> = ({
     tagStatus,
     searchWord,
     handleTagStatusChange,
     handleSearchWordChange,
-    handleSubmit
+    handleSubmit,
+    customStyles
   }) => {
+  const styles = customStyles ? `${defaultStyle} ${customStyles}` : defaultStyle;
   return (
-    <div className="fixed z-20 w-5/6">
+    <div className={styles}>
       <SelectBox
         inputValue={tagStatus}
         options={tagStatusOptions}

@@ -174,20 +174,19 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
           handleProductTagRelationDelete={handleProductTagRelationDelete}
         />
       }
-      <div className="fixed z-20 w-5/6">
-        <ProductSearchHeader
-          tagStatus={tagStatus}
-          searchWord={searchWord}
-          handleTagStatusChange={(event) => setTagStatus(event.target.value as TagStatus)}
-          handleSearchWordChange={(event) => setSearchWord(event.target.value)}
-          handleSubmit={handleSearchWordSubmit}
-        />
-      </div>
+      <ProductSearchHeader
+        tagStatus={tagStatus}
+        searchWord={searchWord}
+        handleTagStatusChange={(event) => setTagStatus(event.target.value as TagStatus)}
+        handleSearchWordChange={(event) => setSearchWord(event.target.value)}
+        handleSubmit={handleSearchWordSubmit}
+        customStyles='fixed z-20 top-5 w-5/6'
+      />
       <InfiniteScroll
         loadMore={loadMore}
         hasMore={hasMore}
         loader={loader}
-        className="relative	top-600"
+        className="mt-24"
       >
         <ProductList
           products={productsFilteredBySearchWord.slice(0, PAGE_PRODUCT_COUNT*pageIndex)}
