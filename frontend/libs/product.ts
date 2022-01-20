@@ -13,8 +13,10 @@ export async function getAllProducts(): Promise<Product[]> {
 			)
 		`);
 	
-	if (error && status !== 406) {
-		throw error
+		if (error && status !== 406) throw error;
+		if (!data) return [];
+  
+  return data;
 	}
 
   if (data === null) {

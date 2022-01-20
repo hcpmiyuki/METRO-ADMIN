@@ -8,13 +8,8 @@ export async function getTags(): Promise<Tag[]> {
     tag_name
   `)
 
-  if (error && status !== 406) {
-		throw error
-	}
-
-  if (data === null) {
-    return []
-  }
+	if (error && status !== 406) throw error;
+  if (!data) return [];
   
   return data;
 }
@@ -24,9 +19,7 @@ export async function createTag(tagName: string): Promise<Tag> {
   .from<Tag>('tags')
   .insert({tag_name: tagName});
 
-  if (error && status !== 406 || data === null) {
-		throw error
-	}
+  if (error && status !== 406 || data === null) throw error;
 
   return data[0];
 }
