@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react"
-import { getAllProducts } from '../../libs/product'
+import { getAllProducts, getProductById, getProductsByIds } from '../../libs/product'
 import { getTags, createTag, convertTagToOption } from '../../libs/tags'
 import { insertProductTags, deleteProductTags } from '../../libs/productTags'
 import ProductList from '../../components/model/product/productList'
@@ -7,7 +7,6 @@ import ProductSearchHeader from "../../components/model/product/ProductSearchHea
 import TagAnnotationModal from "../../components/model/productTag/TagAnnotationModal"
 import ModaShowButton from "../../components/model/productTag/TagAnnotationModalShowButton"
 import InfiniteScroll  from "react-infinite-scroller"
-import Router from 'next/router'
 
 type TagStatus = 'all' | 'notTagged' | 'tagged';
 
@@ -49,10 +48,34 @@ const extractTagsCommonToProducts = (products:Product[]): TagOption[] => {
   return tagsCommon;
 }
 
+const filterProductsByTagStatus = (products: ProductWithCheck[], tagStatus: TagStatus) => {
+  const productsFilteredTemp = products.filter((product) => {
+    const tagLength = !product.tags ? 0 : product.tags.length;
+    if (tagStatus == 'tagged') {
+      return tagLength != 0 
+    } else if (tagStatus == 'notTagged') {
+      return tagLength == 0
+    } else {
+      return true
+    }
+  });
+
+  return productsFilteredTemp;
+}
+
+const filterProductsBySearchWord = (products: ProductWithCheck[], searchWord: string) => {
+  const productsFilteredTemp = products.filter(
+    product => product.product_name.includes(searchWord)
+  );
+
+  return productsFilteredTemp;
+}
+
 const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
-  const [tagOptionList, setTagOptionList] = useState<TagOption[]>(tagOptions);
+  const [tagOptionsState, setTagOptionsState] = useState<TagOption[]>(tagOptions);
   const [tagOptionsCommon, setTagOptionsCommon] = useState<TagOption[]>([]);
   const [tagOptionsSelected, setTagOptionsSelected] = useState<readonly TagOption[]>([]);
+  const [productsWithCheckState, setProductsWithCheckState] = useState<ProductWithCheck[]>(productsWithCheck);
   const [productsFilteredByTagStatus, setProductsFilteredByTagStatus] = useState<ProductWithCheck[]>(productsWithCheck);
   const [productsFilteredBySearchWord, setProductsFilteredBySearchWord] = useState<ProductWithCheck[]>(productsWithCheck);
   const [searchWord, setSearchWord] = useState<string>('');
@@ -62,23 +85,32 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
   const [modalShowed, setModalShowed] = useState<boolean>(false);
   const [productsChecked, setProductsChecked] = useState<ProductWithCheck[]>([]);
   const PAGE_PRODUCT_COUNT: number = 20;
-
+  
   useEffect( () => {
-    const productsSearchedTemp = productsWithCheck.filter((product) => {
-      const tagLength = !product.tags ? 0 : product.tags.length;
-      if (tagStatus == 'tagged') {
-        return tagLength != 0 
-      } else if (tagStatus == 'notTagged') {
-        return tagLength == 0
-      } else {
-        return true
-      }
-    });
-    setSearchWord('');
-    setProductsFilteredByTagStatus(productsSearchedTemp);
-    setProductsFilteredBySearchWord(productsSearchedTemp);
-  }, [tagStatus])
+    const productsFilteredByTagStatusTemp = filterProductsByTagStatus(productsWithCheckState, tagStatus);
+    setProductsFilteredByTagStatus(productsFilteredByTagStatusTemp);
 
+    const productsFilteredBySearchWordTemp = filterProductsBySearchWord(productsFilteredByTagStatusTemp, searchWord);
+    setProductsFilteredBySearchWord(productsFilteredBySearchWordTemp);
+  }, [productsWithCheckState])
+
+  const updateProductsByIds = async(productIds: number[]) => {
+    const productIdSet = new Set(productIds);
+    const productsUpdated: ProductWithCheck[] = await Promise.all(productsWithCheckState.map(
+      async (product) => {
+        if (productIdSet.has(product.id)){
+          const producUpdated: ProductWithCheck = await getProductById(product.id);
+          producUpdated['checked'] = false;
+          return producUpdated;
+        }
+        product['checked'] = false;
+        return product;
+      }
+    ));
+    
+    setProductsWithCheckState(productsUpdated);
+  }
+  
   //項目を読み込むときのコールバック
   const loadMore = () => {
     if (PAGE_PRODUCT_COUNT*pageIndex > productsFilteredByTagStatus.length) {
@@ -88,11 +120,17 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     setpageIndex(pageIndex+1);
   }
 
+  const handleTagStatusChange = (tagStatusSelected: TagStatus) => {
+    const productsFilteredTemp = filterProductsByTagStatus(productsWithCheckState, tagStatusSelected);
+    setTagStatus(tagStatusSelected);
+    setSearchWord('');
+    setProductsFilteredByTagStatus(productsFilteredTemp);
+    setProductsFilteredBySearchWord(productsFilteredTemp);
+  }
+
   const handleSearchWordSubmit = () => {
-    const productsSearchedTemp = productsFilteredByTagStatus.filter(
-      product => product.product_name.includes(searchWord)
-    );
-    setProductsFilteredBySearchWord(productsSearchedTemp);
+    const productsFilteredTemp = filterProductsBySearchWord(productsFilteredByTagStatus, searchWord);
+    setProductsFilteredBySearchWord(productsFilteredTemp);
   }
 
   const hadleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,12 +147,20 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
 
   const handleProductTagRelationCreate = async () => {
     await insertProductTags(productsChecked, tagOptionsSelected)
-    .then(() => {
-      Router.reload();
+    .then(async() => {
+      const productIds = productsChecked.map(product => product.id);
+      await updateProductsByIds(productIds)
+      .then(() => {
+        setModalShowed(false);
+        setTagOptionsSelected([]);
+      })
+      .catch((e) => {
+        console.error(e);
+      });
     })
     .catch((e) => {
-      console.error(e)
-    })
+      console.error(e);
+    });
   }
 
   const handleTagCreate = async (tagName: string) => {
@@ -123,17 +169,19 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     const tagCreated = await createTag(tagName);
     const tagOption = convertTagToOption(tagCreated);
     setTagOptionsSelected([...tagOptionsSelected, tagOption]);
-    setTagOptionList([...tagOptionList, tagOption]);
+    setTagOptionsState([...tagOptionsState, tagOption]);
   }
 
   const handleProductTagRelationDelete = async (tagId: number) => {
     await deleteProductTags(productsChecked, tagId)
-    .then(() => {
+    .then(async() => {
       const tagOptionsCommonTemp = tagOptionsCommon.filter(tag => !(tag.value === tagId));
+      const productIds = productsChecked.map(product => product.id);
+      await updateProductsByIds(productIds)
       setTagOptionsCommon(tagOptionsCommonTemp);
     })
     .catch((e) => {
-      console.error(e)
+      console.error(e);
     });
   }
 
@@ -165,7 +213,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
         <TagAnnotationModal
           closeModal={closeModal}
           productsChecked={productsChecked}
-          tagOptions={tagOptionList}
+          tagOptions={tagOptionsState}
           tagOptionsSelected={tagOptionsSelected}
           tagOptionsCommon={tagOptionsCommon}
           handleAnnotate={handleProductTagRelationCreate}
@@ -178,7 +226,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
       <ProductSearchHeader
         tagStatus={tagStatus}
         searchWord={searchWord}
-        handleTagStatusChange={(event) => setTagStatus(event.target.value as TagStatus)}
+        handleTagStatusChange={(event) => handleTagStatusChange(event.target.value as TagStatus)}
         handleSearchWordChange={(event) => setSearchWord(event.target.value)}
         handleSubmit={handleSearchWordSubmit}
         customStyles='fixed z-20 top-5 w-5/6'

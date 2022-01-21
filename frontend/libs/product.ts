@@ -19,9 +19,38 @@ export async function getAllProducts(): Promise<Product[]> {
   return data;
 	}
 
-  if (data === null) {
-    return []
+export async function getProductById(id: number): Promise<Product> {
+	const { data, error, status } = await supabase
+	.from<Product>('products')
+	.select(`
+		*,
+		tags (
+			id,
+			tag_name
+		)
+	`)
+	.eq('id', id)
+	.single();
+
+	if (error && status !== 406 || data === null) throw error;
+  
+  return data;
   }
+
+export async function getProductsByIds(ids: number[]): Promise<Product[]> {
+	const { data, error, status } = await supabase
+	.from<Product>('products')
+	.select(`
+		*,
+		tags (
+			id,
+			tag_name
+		)
+	`)
+	.in('id', ids);
+
+	if (error && status !== 406) throw error;
+  if (!data) return [];
   
   return data;
 }
