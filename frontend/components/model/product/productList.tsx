@@ -3,7 +3,7 @@ import ProductItem from './product'
 
 type Props = {
   products: ProductWithCheck[];
-  hadleCheckboxChange: (event: any) => void;
+  hadleCheckboxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 const ProductList: FC<Props> = ({ products, hadleCheckboxChange }) => {

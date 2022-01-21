@@ -1,235 +1,266 @@
 import { FC, useEffect, useState } from "react"
-import { getProducts } from '../../libs/product'
-import { getTags, createTag } from '../../libs/tags'
+import { getAllProducts, getProductById, getProductsByIds } from '../../libs/product'
+import { getTags, createTag, convertTagToOption } from '../../libs/tags'
 import { insertProductTags, deleteProductTags } from '../../libs/productTags'
-import ProductList from '../../components/productList'
-import KeywordSearch from "../../components/keywordSearch"
-import EditButton from "../../components/editButton"
-import EditModal from "../../components/editModal"
+import ProductList from '../../components/model/product/productList'
+import ProductSearchHeader from "../../components/model/product/ProductSearchHeader"
+import TagAnnotationModal from "../../components/model/productTag/TagAnnotationModal"
+import ModaShowButton from "../../components/model/productTag/TagAnnotationModalShowButton"
 import InfiniteScroll  from "react-infinite-scroller"
-import Router from 'next/router'
 
 type TagStatus = 'all' | 'notTagged' | 'tagged';
 
-type Option = {
-  value: TagStatus;
-  text: string;
-}
-
 type Props = {
-  products: ProductWithCheck[];
+  productsWithCheck: ProductWithCheck[];
   tagOptions: TagOption[];
 };
 
-const tagToOption = (tag:Tag): TagOption => {
-  return {
-    value: tag.id,
-    label: tag.tag_name
-  }
-}
+const extractTagsCommonToProducts = (products:Product[]): TagOption[] => {
+  if (!products[0].tags) return [];
 
-const filterCommonTags = (products:Product[]): TagOption[] => {
   // 論理積とる用
-  let tagCommon:Set<number> = new Set(products[0].tags.map(tag=> tag.id));
+  let tagSetCommon:Set<number> = new Set(products[0].tags.map(tag=> tag.id));
   // 追加済みかメモする用
-  let tagAdded:Set<number> = new Set([]);
+  let tagSetAdded:Set<number> = new Set([]);
   // 追加する用
-  let tagsAnnotatedCommonTemps:TagOption[] = [];
+  let tagsCommon:TagOption[] = [];
 
-  // 選択されたproductに共通するタグのidを調べる
-  products.slice(1,).forEach(product => {
-    const tagIds = product.tags.map(tag=> tag.id);
-    tagCommon = new Set(tagIds.filter(x => tagCommon.has(x)));
+  // 選択されたproductsに共通するタグのidを調べる
+  products.forEach(product => {
+    const tagIds = !product.tags ? [] : product.tags.map(tag=> tag.id);
+    tagSetCommon = new Set(tagIds.filter(x => tagSetCommon.has(x)));
   });
 
   // 条件に合うタグを追加していく
   products.forEach(product => {
-    const tagsAnnotatedCommonTemp = product.tags
-      .filter(tag => {
-        if (tagCommon.has(tag.id) && !tagAdded.has(tag.id)){
-          tagAdded.add(tag.id);
+    const tagsdCommonTemp = !product.tags ? [] : 
+      product.tags.filter(tag => {
+        if (tagSetCommon.has(tag.id) && !tagSetAdded.has(tag.id)){
+          tagSetAdded.add(tag.id);
           return true;
         }
         return false;
       })
-      .map(tag => tagToOption(tag));
-    tagsAnnotatedCommonTemps = [...tagsAnnotatedCommonTemps, ...tagsAnnotatedCommonTemp]
+      .map(tag => convertTagToOption(tag));
+      tagsCommon = [...tagsCommon, ...tagsdCommonTemp];
   });
 
-  return tagsAnnotatedCommonTemps;
+  return tagsCommon;
 }
 
-const ProductPage: FC<Props> = ({ products, tagOptions }) => {
-  const [tagOptionList, setTagOptionList] = useState<TagOption[]>(tagOptions);
-  const [tagsAnnotatedCommon, setTagsAnnotatedCommon] = useState<TagOption[]>([]);
+const filterProductsByTagStatus = (products: ProductWithCheck[], tagStatus: TagStatus) => {
+  const productsFilteredTemp = products.filter((product) => {
+    const tagLength = !product.tags ? 0 : product.tags.length;
+    if (tagStatus == 'tagged') {
+      return tagLength != 0 
+    } else if (tagStatus == 'notTagged') {
+      return tagLength == 0
+    } else {
+      return true
+    }
+  });
+
+  return productsFilteredTemp;
+}
+
+const filterProductsBySearchWord = (products: ProductWithCheck[], searchWord: string) => {
+  const productsFilteredTemp = products.filter(
+    product => product.product_name.includes(searchWord)
+  );
+
+  return productsFilteredTemp;
+}
+
+const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
+  const [tagOptionsState, setTagOptionsState] = useState<TagOption[]>(tagOptions);
+  const [tagOptionsCommon, setTagOptionsCommon] = useState<TagOption[]>([]);
   const [tagOptionsSelected, setTagOptionsSelected] = useState<readonly TagOption[]>([]);
-  const [productsSearched, setProductsSearched] = useState<ProductWithCheck[]>(products);
-  const [productsSearchedSelected, setproductsSearchedSelected] = useState<ProductWithCheck[]>(products);
+  const [productsWithCheckState, setProductsWithCheckState] = useState<ProductWithCheck[]>(productsWithCheck);
+  const [productsFilteredByTagStatus, setProductsFilteredByTagStatus] = useState<ProductWithCheck[]>(productsWithCheck);
+  const [productsFilteredBySearchWord, setProductsFilteredBySearchWord] = useState<ProductWithCheck[]>(productsWithCheck);
   const [searchWord, setSearchWord] = useState<string>('');
   const [tagStatus, setTagStatus] = useState<TagStatus>('all');
-  const [pageNum, setPageNum] = useState<number>(1);
+  const [pageIndex, setpageIndex] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
-  const [showModalFlag, setShowModalFlag] = useState<boolean>(false);
+  const [modalShowed, setModalShowed] = useState<boolean>(false);
   const [productsChecked, setProductsChecked] = useState<ProductWithCheck[]>([]);
   const PAGE_PRODUCT_COUNT: number = 20;
-  const options: Option[] = [
-    {value: 'all', text: '全て'},
-    {value: 'notTagged', text: 'タグ無し'},
-    {value: 'tagged', text: 'タグ付き'}
-  ];
-
+  
   useEffect( () => {
-    const productsSearchedTemp = products.filter((product) => {
-      const tagLength = product.tags.length;
-      if (tagStatus == 'tagged') {
-        return tagLength != 0 
-      } else if (tagStatus == 'notTagged') {
-        return tagLength == 0
-      } else {
-        return true
-      }
-    });
-    setSearchWord('');
-    setProductsSearched(productsSearchedTemp);
-    setproductsSearchedSelected(productsSearchedTemp);
-  }, [tagStatus])
+    const productsFilteredByTagStatusTemp = filterProductsByTagStatus(productsWithCheckState, tagStatus);
+    setProductsFilteredByTagStatus(productsFilteredByTagStatusTemp);
 
-    //項目を読み込むときのコールバック
+    const productsFilteredBySearchWordTemp = filterProductsBySearchWord(productsFilteredByTagStatusTemp, searchWord);
+    setProductsFilteredBySearchWord(productsFilteredBySearchWordTemp);
+  }, [productsWithCheckState])
+
+  const updateProductsByIds = async(productIds: number[]) => {
+    const productIdSet = new Set(productIds);
+    const productsUpdated: ProductWithCheck[] = await Promise.all(productsWithCheckState.map(
+      async (product) => {
+        if (productIdSet.has(product.id)){
+          const producUpdated: ProductWithCheck = await getProductById(product.id);
+          producUpdated['checked'] = false;
+          return producUpdated;
+        }
+        product['checked'] = false;
+        return product;
+      }
+    ));
+    
+    setProductsWithCheckState(productsUpdated);
+  }
+  
+  //項目を読み込むときのコールバック
   const loadMore = () => {
-    if (PAGE_PRODUCT_COUNT*pageNum > productsSearched.length) {
+    if (PAGE_PRODUCT_COUNT*pageIndex > productsFilteredByTagStatus.length) {
       setHasMore(false);
       return
     };
-    setPageNum(pageNum+1);
+    setpageIndex(pageIndex+1);
   }
 
-  const handleSearchWordSubmit = (event: any) => {
-    const productsSearchedTemp = productsSearched.filter(product => product.product_name.includes(searchWord));
-    setproductsSearchedSelected(productsSearchedTemp);
+  const handleTagStatusChange = (tagStatusSelected: TagStatus) => {
+    const productsFilteredTemp = filterProductsByTagStatus(productsWithCheckState, tagStatusSelected);
+    setTagStatus(tagStatusSelected);
+    setSearchWord('');
+    setProductsFilteredByTagStatus(productsFilteredTemp);
+    setProductsFilteredBySearchWord(productsFilteredTemp);
   }
 
-  const hadleCheckboxChange = (event: any) => {
-    const id:number = event.target.value;
-    const isChecked:boolean = event.target.checked;
-    const productsSearchedSelectedTemp = productsSearchedSelected.map((product) => {
-      if (product.id == id) {
-        product.isChecked = isChecked
+  const handleSearchWordSubmit = () => {
+    const productsFilteredTemp = filterProductsBySearchWord(productsFilteredByTagStatus, searchWord);
+    setProductsFilteredBySearchWord(productsFilteredTemp);
+  }
+
+  const hadleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const productId = Number(event.target.value);
+    const checked = event.target.checked;
+    const productsFilteredBySearchWordTemp = productsFilteredBySearchWord.map((product) => {
+      if (product.id == productId) {
+        product.checked = checked;
       }
-      return product
+      return product;
     });
-    setproductsSearchedSelected(productsSearchedSelectedTemp);
+    setProductsFilteredBySearchWord(productsFilteredBySearchWordTemp);
   }
 
-  const handleTagAnnotate = async () => {
+  const handleProductTagRelationCreate = async () => {
     await insertProductTags(productsChecked, tagOptionsSelected)
-    .then(() => {
-      Router.reload();
+    .then(async() => {
+      const productIds = productsChecked.map(product => product.id);
+      await updateProductsByIds(productIds)
+      .then(() => {
+        setModalShowed(false);
+        setTagOptionsSelected([]);
+      })
+      .catch((e) => {
+        console.error(e);
+      });
     })
     .catch((e) => {
-      console.error(e)
-    })
+      console.error(e);
+    });
   }
 
-  const handleTagCreate = async (inputValue: string) => {
-    if (inputValue === '') return
+  const handleTagCreate = async (tagName: string) => {
+    if (tagName === '') return
 
-    const tagCreated = await createTag(inputValue);
-    const tagOption = tagToOption(tagCreated);
+    const tagCreated = await createTag(tagName);
+    const tagOption = convertTagToOption(tagCreated);
     setTagOptionsSelected([...tagOptionsSelected, tagOption]);
-    setTagOptionList([...tagOptionList, tagOption]);
+    setTagOptionsState([...tagOptionsState, tagOption]);
   }
 
-  const handleDeleteProductTagRelation = async (value: any) => {
-    await deleteProductTags(productsChecked, value)
-    .then(() => {
-      const tagsAnnotatedCommonTemp = tagsAnnotatedCommon.filter(tag => !(tag.value === value));
-      setTagsAnnotatedCommon(tagsAnnotatedCommonTemp);
+  const handleProductTagRelationDelete = async (tagId: number) => {
+    await deleteProductTags(productsChecked, tagId)
+    .then(async() => {
+      const tagOptionsCommonTemp = tagOptionsCommon.filter(tag => !(tag.value === tagId));
+      const productIds = productsChecked.map(product => product.id);
+      await updateProductsByIds(productIds)
+      setTagOptionsCommon(tagOptionsCommonTemp);
     })
     .catch((e) => {
-      console.error(e)
+      console.error(e);
     });
   }
 
   const showModal = () => {
-    const productsSearchedSelectedTemp = productsSearchedSelected.filter(product => product.isChecked);
-    if (productsSearchedSelectedTemp.length === 0) {
+    const productsCheckedTemp = productsFilteredBySearchWord.filter(product => product.checked);
+    if (productsCheckedTemp.length === 0) {
       alert('チェックされた商品がありません');
       return;
     }
-    setProductsChecked(productsSearchedSelectedTemp);
+    setProductsChecked(productsCheckedTemp);
 
-    const commonTags = filterCommonTags(productsSearchedSelectedTemp);
-    setTagsAnnotatedCommon(commonTags);
-    setShowModalFlag(true);
+    const tagOptionsCommonTemp = extractTagsCommonToProducts(productsCheckedTemp);
+    setTagOptionsCommon(tagOptionsCommonTemp);
+    setModalShowed(true);
   }
 
   const closeModal = () => {
-    setShowModalFlag(false);
+    setModalShowed(false);
     setTagOptionsSelected([]);
   }
 
-  const productsLoaded = (
-    <ProductList products={productsSearchedSelected.slice(0, PAGE_PRODUCT_COUNT*pageNum)} hadleCheckboxChange={hadleCheckboxChange} />
-  );
-
-  const loader =<div className="loader" key={0}>Loading ...</div>;
+  const loader = <div className="loader" key={0}>Loading ...</div>;
 
   return (
     <div>
-      <EditButton showModal={showModal}/>
+      <ModaShowButton showModal={showModal}/>
       {
-        showModalFlag &&
-        <EditModal
+        modalShowed &&
+        <TagAnnotationModal
           closeModal={closeModal}
-          products={productsChecked}
-          tagOptions={tagOptionList}
-          tagsAnnotatedCommon={tagsAnnotatedCommon}
-          handleAnnotate={handleTagAnnotate}
-          handleTagSelectChange={setTagOptionsSelected}
+          productsChecked={productsChecked}
+          tagOptions={tagOptionsState}
           tagOptionsSelected={tagOptionsSelected}
+          tagOptionsCommon={tagOptionsCommon}
+          handleAnnotate={handleProductTagRelationCreate}
+          handleTagSelectChange={setTagOptionsSelected}
           handleTagCreate={handleTagCreate}
-          handleDeleteProductTagRelation={handleDeleteProductTagRelation}
+          handleProductTagRelationDelete={handleProductTagRelationDelete}
+          customStyles='fixed top-28 mx-auto z-20'
         />
       }
-      <div className="fixed z-20 w-5/6">
-        <select value={tagStatus} className="rounded w-full" onChange={(event) => setTagStatus(event.target.value as TagStatus)}>
-          {options.map((option, i) => {
-            return <option value={option.value} key={i}>{option.text}</option>
-          })}
-        </select>
-        <KeywordSearch
-          handleChange={setSearchWord}
-          handleSubmit={handleSearchWordSubmit}
-          searchWord={searchWord}
-        />
-      </div>
+      <ProductSearchHeader
+        tagStatus={tagStatus}
+        searchWord={searchWord}
+        handleTagStatusChange={(event) => handleTagStatusChange(event.target.value as TagStatus)}
+        handleSearchWordChange={(event) => setSearchWord(event.target.value)}
+        handleSubmit={handleSearchWordSubmit}
+        customStyles='fixed z-20 top-5 w-5/6'
+      />
       <InfiniteScroll
         loadMore={loadMore}
         hasMore={hasMore}
         loader={loader}
-        className="relative	top-600"
+        className="mt-24"
       >
-        {productsLoaded}
+        <ProductList
+          products={productsFilteredBySearchWord.slice(0, PAGE_PRODUCT_COUNT*pageIndex)}
+          hadleCheckboxChange={hadleCheckboxChange}
+        />
       </InfiniteScroll>
     </div>
   );
 };
 
 export async function getStaticProps() {
-  let products: ProductWithCheck[] = await getProducts();
-  products = products.map((item) => {
-    item['isChecked'] = false
-    return item
+  let productsWithCheck: ProductWithCheck[] = await getAllProducts();
+  productsWithCheck = productsWithCheck.map((product) => {
+    product['checked'] = false
+    return product;
   })
 
   const tags = await getTags();
   const tagOptions:TagOption[] = tags.map(tag => {
-    return tagToOption(tag)
+    return convertTagToOption(tag)
   });
 
   return {
     props: {
-      products,
+      productsWithCheck,
       tagOptions
     },
   }

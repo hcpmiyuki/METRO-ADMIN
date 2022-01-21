@@ -4,15 +4,13 @@ export async function insertProductTags(products:Product[], tagOptions:readonly 
   const relations = createProductTagRelationsArray(products, tagOptions);
   const { data, error, status } = await supabase
   .from<ProductTag>('product_tags')
-  .upsert(relations);
+  .upsert(
+    relations,
+    {onConflict: 'product_id, tag_id'}
+  );
 
-  if (error && status !== 406) {
-		throw error
-	}
-
-  if (data === null) {
-    return []
-  }
+	if (error && status !== 406) throw error;
+  if (!data) return [];
   
   return data;
 }
@@ -25,13 +23,8 @@ export async function deleteProductTags(products:Product[], tagId: number) {
   .match({tag_id: tagId})
   .in('product_id', productIds);
 
-  if (error && status !== 406) {
-		throw error
-	}
-
-  if (data === null) {
-    return []
-  }
+	if (error && status !== 406) throw error;
+  if (!data) return [];
   
   return data;
 }
