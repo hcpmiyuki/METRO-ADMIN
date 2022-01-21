@@ -27,6 +27,7 @@ type Props = {
 const defaultStyle = '';
 
 const ProductSearchHeader: FC<Props> = ({
+    children,
     tagStatus,
     searchWord,
     handleTagStatusChange,
@@ -55,6 +56,7 @@ const ProductSearchHeader: FC<Props> = ({
           customStyles="bg-slate-500 rounded-md w-1/6 pt-2"
         />
       </div>
+      { children }
     </div>
   )
 }

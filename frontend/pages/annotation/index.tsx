@@ -6,6 +6,7 @@ import ProductList from '../../components/model/product/productList'
 import ProductSearchHeader from "../../components/model/product/ProductSearchHeader"
 import TagAnnotationModal from "../../components/model/productTag/TagAnnotationModal"
 import ModaShowButton from "../../components/model/productTag/TagAnnotationModalShowButton"
+import Button from "../../components/ui/button"
 import InfiniteScroll  from "react-infinite-scroller"
 
 type TagStatus = 'all' | 'notTagged' | 'tagged';
@@ -84,6 +85,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [modalShowed, setModalShowed] = useState<boolean>(false);
   const [productsChecked, setProductsChecked] = useState<ProductWithCheck[]>([]);
+  const [allSelected, setAllSelected] = useState<boolean>(false);
   const PAGE_PRODUCT_COUNT: number = 20;
   
   useEffect( () => {
@@ -94,13 +96,13 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     setProductsFilteredBySearchWord(productsFilteredBySearchWordTemp);
   }, [productsWithCheckState])
 
-  const updateProductsByIds = async(productIds: number[]) => {
+  const updateProductsByIds = async(productIds: number[], reset:boolean=false) => {
     const productIdSet = new Set(productIds);
     const productsUpdated: ProductWithCheck[] = await Promise.all(productsWithCheckState.map(
       async (product) => {
         if (productIdSet.has(product.id)){
           const producUpdated: ProductWithCheck = await getProductById(product.id);
-          producUpdated['checked'] = false;
+          producUpdated['checked'] = reset ? false : product.checked;
           return producUpdated;
         }
         product['checked'] = false;
@@ -149,9 +151,10 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     await insertProductTags(productsChecked, tagOptionsSelected)
     .then(async() => {
       const productIds = productsChecked.map(product => product.id);
-      await updateProductsByIds(productIds)
+      await updateProductsByIds(productIds, true)
       .then(() => {
         setModalShowed(false);
+        setAllSelected(false);
         setTagOptionsSelected([]);
       })
       .catch((e) => {
@@ -203,6 +206,15 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
     setTagOptionsSelected([]);
   }
 
+  const selectAllToggle = () => {
+    const productsFilteredBySearchWordTemp = productsFilteredBySearchWord.map((product) => {
+      product['checked'] = !allSelected;
+      return product;
+    })
+    setAllSelected(!allSelected);
+    setProductsFilteredBySearchWord(productsFilteredBySearchWordTemp);
+  }
+
   const loader = <div className="loader" key={0}>Loading ...</div>;
 
   return (
@@ -220,7 +232,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
           handleTagSelectChange={setTagOptionsSelected}
           handleTagCreate={handleTagCreate}
           handleProductTagRelationDelete={handleProductTagRelationDelete}
-          customStyles='fixed top-28 mx-auto z-20'
+          customStyles='fixed top-32 mx-auto z-20'
         />
       }
       <ProductSearchHeader
@@ -230,12 +242,18 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
         handleSearchWordChange={(event) => setSearchWord(event.target.value)}
         handleSubmit={handleSearchWordSubmit}
         customStyles='fixed z-20 top-5 w-5/6'
-      />
+      >
+        <Button
+          handleSubmit={selectAllToggle}
+          text={allSelected ? '全選択解除' : '全選択'}
+          customStyles="bg-slate-500 rounded-md w-2/6 p-1 text-sm"
+        />
+      </ProductSearchHeader>
       <InfiniteScroll
         loadMore={loadMore}
         hasMore={hasMore}
         loader={loader}
-        className="mt-24"
+        className="mt-32"
       >
         <ProductList
           products={productsFilteredBySearchWord.slice(0, PAGE_PRODUCT_COUNT*pageIndex)}
