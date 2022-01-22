@@ -12,3 +12,20 @@ type Product = {
 type ProductWithCheck = Product & {
   checked?: boolean;
 }
+
+type ProductTag = {
+	id?: number
+	product_id: number
+	tag_id: number
+}
+
+type Tag = {
+	id: number;
+	tag_name: string;
+	products?: Product[];
+}
+
+type TagOption = {
+  value: number;
+  label: string;
+}
