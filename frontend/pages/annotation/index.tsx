@@ -219,7 +219,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
 
   return (
     <div>
-      <ModaShowButton showModal={showModal}/>
+      <ModaShowButton showModal={showModal} customStyles="z-20"/>
       {
         modalShowed &&
         <TagAnnotationModal
@@ -264,7 +264,7 @@ const ProductPage: FC<Props> = ({ productsWithCheck, tagOptions }) => {
   );
 };
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   let productsWithCheck: ProductWithCheck[] = await getAllProducts();
   productsWithCheck = productsWithCheck.map((product) => {
     product['checked'] = false
