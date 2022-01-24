@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import Image from 'next/image'
+// import Image from 'next/image'
 import TagItem from '../tag/tag'
 import CheckInput from '../../ui/CheckInput'
 
@@ -11,7 +11,11 @@ type Props = {
 const ProductItem: FC<Props> = ({ product, hadleCheckboxChange }) => {
 	return (
 		<div>
-			<Image src={product.image_url} width={64} height={64} alt={product.product_name} />
+			<div className='relative w-full h-52'>
+				{/* next/image使いたい */}
+				{/* <Image src={product.image_url} layout="fill" objectFit="contain" alt={product.product_name} /> */}
+				<img src={product.image_url} alt="pictuer" className='w-full'/>
+			</div>
 			<div className='block'>
 				{(typeof product.checked !== "undefined") &&
 					<CheckInput

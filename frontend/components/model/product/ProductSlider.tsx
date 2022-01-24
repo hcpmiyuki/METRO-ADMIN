@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import Slider from "react-slick";
+// import Image from 'next/image'
 
 type Props = {
   products: Product[];
@@ -16,8 +17,10 @@ const SliderItem: FC<Props> = ({ products }) => {
       <div className='w-4/5'>
         <Slider {...settings}>
           {products.map((product)=>
-            <div key={product.id}>
-              <img src={product.image_url} alt="pictuer" className="w-full" />
+            <div key={product.id} className='relative w-full h-52'>
+              {/* next/image使いたい */}
+              {/* <Image src={product.image_url} alt="pictuer" layout="fill" objectFit="contain"  /> */}
+              <img src={product.image_url} alt="pictuer" className='w-full'/>
             </div>)
           }
         </Slider>
