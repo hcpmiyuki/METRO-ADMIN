@@ -1,0 +1,8 @@
+runtime: nodejs12
+handlers:
+  - url: /_next/static
+    static_dir: .next/static
+    
+  - url: /.*
+    secure: always
+    script: auto
